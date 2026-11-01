@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Sai Babu's Wrath</title>
+  <meta name="description" content="A polished, production-quality cyber-glider browser game with high-DPI canvas physics, Web Audio synthesizer, and dynamic neon themes.">
+  <meta name="theme-color" content="#080c1e">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- Google Fonts: Outfit for Display & Plus Jakarta Sans for UI -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app-wrapper">
+    <!-- Ambient Background Glow -->
+    <div class="ambient-glow ambient-top"></div>
+    <div class="ambient-glow ambient-bottom"></div>
+
+    <!-- Main Game Container (Constrained aspect ratio) -->
+    <main id="game-container" role="application" aria-label="Sai Babu's Wrath">
+      <!-- High-DPI Canvas -->
+      <canvas id="game-canvas" width="420" height="680" aria-label="Game canvas showing player glider, obstacles, and scrolling environment"></canvas>
+
+      <!-- Persistent Quick Top-Bar -->
+      <header id="top-bar">
+        <button id="theme-toggle-btn" class="icon-btn" aria-label="Toggle light/dark theme" title="Toggle Theme">
+          <span class="icon">☀️</span>
+        </button>
+        <button id="sound-toggle-btn" class="icon-btn" aria-label="Toggle sound mute" title="Toggle Sound">
+          <span class="icon">🔊</span>
+        </button>
+      </header>
+
+      <!-- SCREEN 1: Start / Main Menu Screen -->
+      <section id="start-screen" class="ui-screen active" aria-labelledby="game-title">
+        <div class="glass-card title-card">
+          <div class="character-preview-avatar">
+            <img src="assets/player.png" alt="Laughing Pilot" class="preview-avatar-img">
+          </div>
+          <div class="brand-badge">WITH LOVE ❤️</div>
+          <h1 id="game-title" class="brand-title">SAI BABU'S <span class="highlight">WRATH</span></h1>
+          <p class="brand-subtitle">Blessing you with points</p>
+
+          <div class="best-score-chip">
+            <span class="chip-label">BEST RECORD</span>
+            <span id="start-best-score" class="chip-value">0</span>
+          </div>
+
+          <div class="menu-actions">
+            <button id="btn-play" class="btn btn-primary pulse-cta" aria-label="Launch flight">
+              <span class="btn-glow"></span>
+              <span class="btn-text">LAUNCH FLIGHT</span>
+              <span class="btn-sub">Tap or Press Space</span>
+            </button>
+
+            <div class="secondary-actions">
+              <button id="btn-settings-open" class="btn btn-glass" aria-label="Open settings">
+                <span class="btn-icon">⚙️</span> Settings
+              </button>
+              <button id="btn-stats-open" class="btn btn-glass" aria-label="Open archives and stats">
+                <span class="btn-icon">🏆</span> Archives
+              </button>
+            </div>
+          </div>
+
+          <div class="controls-hint">
+            <span class="key-tag">SPACE</span>
+            <span class="key-tag">↑</span>
+            <span class="key-tag">TOUCH</span>
+            <span>TO FLAP</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 2: Ready Screen (Tap to Begin) -->
+      <section id="ready-screen" class="ui-screen hidden" aria-live="polite">
+        <div class="ready-banner">
+          <div class="ready-indicator">
+            <div class="pulse-ring"></div>
+            <div class="tap-icon">👆</div>
+          </div>
+          <h2 class="ready-title">GET READY</h2>
+          <p class="ready-desc">Tap or press <kbd>Space</kbd> to flap</p>
+        </div>
+      </section>
+
+      <!-- SCREEN 3: Active HUD (In-Game Live Score & Pause) -->
+      <section id="hud-screen" class="ui-screen hidden" aria-label="In-game Heads Up Display">
+        <div class="hud-top">
+          <div id="hud-score" class="hud-score-counter" aria-live="polite" aria-label="Current score">0</div>
+          <button id="btn-pause" class="icon-btn hud-pause-btn" aria-label="Pause game" title="Pause (P or Esc)">
+            <span class="pause-bars"></span>
+          </button>
+        </div>
+      </section>
+
+      <!-- MODAL: Pause Dialog -->
+      <section id="pause-modal" class="modal-backdrop hidden" role="dialog" aria-labelledby="pause-title" aria-modal="true">
+        <div class="glass-card modal-dialog">
+          <h2 id="pause-title" class="modal-title">FLIGHT PAUSED</h2>
+          <div class="modal-buttons">
+            <button id="btn-resume" class="btn btn-primary">
+              <span class="btn-text">RESUME</span>
+            </button>
+            <button id="btn-pause-restart" class="btn btn-glass">
+              <span class="btn-icon">🔄</span> RESTART
+            </button>
+            <button id="btn-pause-menu" class="btn btn-glass">
+              <span class="btn-icon">🏠</span> MAIN MENU
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- MODAL: Game Over Screen -->
+      <section id="game-over-modal" class="modal-backdrop hidden" role="dialog" aria-labelledby="game-over-title" aria-modal="true">
+        <div class="glass-card modal-dialog gameover-dialog">
+          <div class="gameover-avatar-slot">
+            <img src="assets/player-angry.png" alt="Angry Crash Face" class="go-avatar-img">
+          </div>
+          <div class="go-header">
+            <span class="go-tag">CRASH IMPACT</span>
+            <h2 id="game-over-title" class="go-title">GAME ENDED</h2>
+          </div>
+
+          <!-- Celebration Badge for High Score -->
+          <div id="new-best-badge" class="new-best-badge hidden">
+            <span class="star-sparkle">✨</span> NEW RECORD! <span class="star-sparkle">✨</span>
+          </div>
+
+          <!-- Score Summary Box -->
+          <div class="score-card">
+            <div class="score-stat">
+              <span class="stat-title">SCORE</span>
+              <span id="go-score" class="stat-number score-current">0</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="score-stat">
+              <span class="stat-title">BEST</span>
+              <span id="go-best-score" class="stat-number score-best">0</span>
+            </div>
+          </div>
+
+          <!-- Medal Badge Showcase -->
+          <div class="medal-section">
+            <div id="medal-container" class="medal-slot">
+              <span class="medal-badge medal-none">🛡️</span>
+            </div>
+            <div class="medal-info">
+              <span class="medal-tier-label">PILOT RANK</span>
+              <span id="medal-name" class="medal-rank-name">Novice</span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="modal-buttons">
+            <button id="btn-replay" class="btn btn-primary pulse-cta" aria-label="Replay flight">
+              <span class="btn-glow"></span>
+              <span class="btn-text">PLAY AGAIN</span>
+              <span class="btn-sub">Press R or Space</span>
+            </button>
+            <button id="btn-menu" class="btn btn-glass">
+              <span class="btn-icon">🏠</span> MAIN MENU
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- MODAL: Settings -->
+      <section id="settings-modal" class="modal-backdrop hidden" role="dialog" aria-labelledby="settings-title" aria-modal="true">
+        <div class="glass-card modal-dialog">
+          <div class="modal-header">
+            <h2 id="settings-title" class="modal-title">SETTINGS</h2>
+            <button id="btn-settings-close" class="close-icon-btn" aria-label="Close settings">✕</button>
+          </div>
+
+          <div class="settings-list">
+            <!-- Sound FX Switch -->
+            <label class="setting-row">
+              <span class="setting-label">Sound Effects</span>
+              <input type="checkbox" id="setting-sound" class="toggle-checkbox" checked>
+              <span class="toggle-slider"></span>
+            </label>
+
+            <!-- Music Switch -->
+            <label class="setting-row">
+              <span class="setting-label">Ambient Music</span>
+              <input type="checkbox" id="setting-music" class="toggle-checkbox">
+              <span class="toggle-slider"></span>
+            </label>
+
+            <!-- Master Volume Slider -->
+            <div class="setting-row-block">
+              <div class="slider-header">
+                <span class="setting-label">Master Volume</span>
+              </div>
+              <input type="range" id="setting-volume" min="0" max="100" value="70" class="range-slider" aria-label="Master volume">
+            </div>
+
+            <!-- Difficulty Selector -->
+            <div class="setting-row-block">
+              <span class="setting-label">Flight Difficulty</span>
+              <div class="segmented-control" role="radiogroup" aria-label="Difficulty level">
+                <label class="segment-option">
+                  <input type="radio" name="difficulty" value="easy">
+                  <span class="segment-btn">Easy</span>
+                </label>
+                <label class="segment-option">
+                  <input type="radio" name="difficulty" value="normal" checked>
+                  <span class="segment-btn">Normal</span>
+                </label>
+                <label class="segment-option">
+                  <input type="radio" name="difficulty" value="hard">
+                  <span class="segment-btn">Hard</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Reduced Motion -->
+            <label class="setting-row">
+              <span class="setting-label">Reduced Motion</span>
+              <input type="checkbox" id="setting-reduced-motion" class="toggle-checkbox">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- MODAL: Stats / Archives -->
+      <section id="stats-modal" class="modal-backdrop hidden" role="dialog" aria-labelledby="stats-title" aria-modal="true">
+        <div class="glass-card modal-dialog">
+          <div class="modal-header">
+            <h2 id="stats-title" class="modal-title">FLIGHT ARCHIVES</h2>
+            <button id="btn-stats-close" class="close-icon-btn" aria-label="Close archives">✕</button>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="sc-title">EASY BEST</span>
+              <span id="stat-easy" class="sc-val">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="sc-title">NORMAL BEST</span>
+              <span id="stat-normal" class="sc-val">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="sc-title">HARD BEST</span>
+              <span id="stat-hard" class="sc-val">0</span>
+            </div>
+            <div class="stat-card">
+              <span class="sc-title">TOTAL FLIGHTS</span>
+              <span id="stat-games" class="sc-val">0</span>
+            </div>
+            <div class="stat-card span-2">
+              <span class="sc-title">TOTAL GATES CLEARED</span>
+              <span id="stat-total-score" class="sc-val">0</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Entry Script as ES Module -->
+  <script type="module" src="js/game.js?v=final_nobloom"></script>
+</body>
+</html>

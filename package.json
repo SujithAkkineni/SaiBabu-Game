@@ -1,0 +1,19 @@
+{
+  "name": "aeropulse",
+  "version": "1.0.0",
+  "description": "Sai Babu's Wrath / AeroPulse — Cyber Flight Odyssey",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "serve": "node server.js"
+  },
+  "keywords": [
+    "game",
+    "canvas",
+    "html5",
+    "flappy-bird"
+  ],
+  "author": "",
+  "license": "MIT"
+}
